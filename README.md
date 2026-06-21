@@ -369,10 +369,4 @@ Then `bt-autoconnect.sh` connects directly to known MACs. No scanning needed —
 
 ---
 
-## GitHub Repo
-
-Full source code and systemd unit files available at: *(your repo here)*
-
----
-
 *Tested on: Raspberry Pi 3B (WiFi 2.4GHz), Windows 10 22H2, 4× Flydigi Direwolf 3, ViGEmBus 1.22.0, Python 3.12*
