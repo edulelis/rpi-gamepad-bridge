@@ -100,39 +100,37 @@ def main():
     
     bridge = GamepadBridge()
     
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(5)
-    
-    try:
-        sock.connect((PI_IP, PORT))
-    except Exception as e:
-        print(f"[!] Falha ao conectar: {e}")
-        print(f"    O servidor esta rodando no Pi? python3 gamepad-server.py")
-        sys.exit(1)
-    
-    print("[+] Conectado! Transmitindo dados dos controles...")
-    print("[+] Abra joy.cpl para verificar. Ctrl+C para parar.")
-    
-    buffer = ""
-    try:
-        while True:
-            data = sock.recv(4096)
-            if not data:
-                break
-            buffer += data.decode()
-            while "\n" in buffer:
-                line, buffer = buffer.split("\n", 1)
-                try:
-                    state = json.loads(line.strip())
-                    bridge.update(state)
-                except json.JSONDecodeError:
-                    pass
-    except KeyboardInterrupt:
-        print("\n[+] Encerrando.")
-    except Exception as e:
-        print(f"[!] Erro: {e}")
-    finally:
-        sock.close()
+    while True:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        
+        try:
+            sock.connect((PI_IP, PORT))
+        except:
+            print(f"[!] Pi offline. Retentando em 5s...")
+            time.sleep(5)
+            continue
+        
+        print("[+] Conectado! Transmitindo...")
+        
+        buffer = ""
+        try:
+            while True:
+                data = sock.recv(4096)
+                if not data:
+                    break
+                buffer += data.decode()
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    try:
+                        state = json.loads(line.strip())
+                        bridge.update(state)
+                    except json.JSONDecodeError:
+                        pass
+        except:
+            print("[!] Conexao perdida. Reconectando...")
+            sock.close()
+            time.sleep(2)
 
 if __name__ == '__main__':
     main()

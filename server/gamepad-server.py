@@ -93,51 +93,53 @@ def main():
             pass
         print(f"    js{idx}: {name}")
     
-    # Start TCP server
+    # Start TCP server — re-accept after client disconnect
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('0.0.0.0', PORT))
     server.listen(1)
     print(f"\n[+] Aguardando conexao na porta {PORT}...")
     print(f"    IP do Pi: {os.popen('hostname -I').read().strip()}")
-    
-    conn, addr = server.accept()
-    print(f"[+] Conectado: {addr}")
-    
-    # Start reader threads for each controller
-    states = {}
-    lock = threading.Lock()
-    
-    def reader_thread(dev_path, idx):
-        state = GamepadState(idx, dev_path)
-        with lock:
-            states[idx] = state
-        for evtype, number, value in read_gamepad(dev_path):
-            state.update(evtype, number, value)
-    
-    threads = []
-    for i, dev in enumerate(devices):
-        t = threading.Thread(target=reader_thread, args=(dev, i), daemon=True)
-        t.start()
-        threads.append(t)
-    
-    # Main loop: send state every ~20ms (50Hz)
-    print("[+] Transmitindo dados... Pressione Ctrl+C para parar.")
+
     try:
         while True:
-            time.sleep(0.02)  # 50 Hz
-            with lock:
-                for idx, state in states.items():
-                    msg = state.to_json() + "\n"
-                    try:
-                        conn.sendall(msg.encode())
-                    except:
-                        print("[!] Conexao perdida.")
-                        return
+            conn, addr = server.accept()
+            print(f"[+] Conectado: {addr}")
+
+            # Start reader threads for each controller
+            states = {}
+            lock = threading.Lock()
+
+            def reader_thread(dev_path, idx):
+                state = GamepadState(idx, dev_path)
+                with lock:
+                    states[idx] = state
+                for evtype, number, value in read_gamepad(dev_path):
+                    state.update(evtype, number, value)
+
+            threads = []
+            for i, dev in enumerate(devices):
+                t = threading.Thread(target=reader_thread, args=(dev, i), daemon=True)
+                t.start()
+                threads.append(t)
+
+            print("[+] Transmitindo...")
+            try:
+                while True:
+                    time.sleep(0.02)
+                    with lock:
+                        for idx, state in states.items():
+                            msg = state.to_json() + "\n"
+                            try:
+                                conn.sendall(msg.encode())
+                            except:
+                                raise
+            except:
+                print("[!] Cliente desconectou. Aguardando reconexao...")
+                conn.close()
     except KeyboardInterrupt:
         print("\n[+] Encerrando.")
     finally:
-        conn.close()
         server.close()
 
 if __name__ == '__main__':
