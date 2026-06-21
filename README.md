@@ -101,28 +101,9 @@ sudo apt install -y python3-evdev python3-pip usbip hwdata bluetooth
 pip3 install evdev --break-system-packages
 ```
 
-### 3. Bluetooth: Auto-Connect Script
+### 3. Pair the Controllers (Bluetooth)
 
-Create `/home/pi/bt-autoconnect.sh`:
-
-```bash
-#!/bin/bash
-# Auto-connect all 4 Flydigi Direwolf controllers via Bluetooth
-MACS=(
-    "AA:BB:CC:DD:EE:01"  # Replace with your controller MACs
-    "AA:BB:CC:DD:EE:02"
-    "AA:BB:CC:DD:EE:03"
-    "AA:BB:CC:DD:EE:04"
-)
-for mac in "${MACS[@]}"; do
-    echo -e "connect $mac\ntrust $mac\nquit" | bluetoothctl 2>/dev/null
-    sleep 1
-done
-```
-
-**Pairing the controllers (one-time):**
-
-Put each controller in Bluetooth mode (`HOME` to turn on, then `FN + A` — blue LED blinking). On the Pi, scan once:
+Put each controller in Bluetooth mode (`HOME` to turn on, then `FN + A` — blue LED blinking). On the Pi:
 
 ```bash
 sudo bluetoothctl
@@ -134,7 +115,27 @@ trust AA:BB:CC:DD:EE:01
 # Repeat for each controller
 ```
 
-After pairing all 4, copy their MAC addresses into `bt-autoconnect.sh`. From then on, the script connects directly by MAC — **no scanning, no discovery, no interference with other Bluetooth devices in the house.**
+Once all 4 are paired, run this to create the auto-connect script with your actual MACs:
+
+```bash
+cat > /home/pi/bt-autoconnect.sh << 'EOF'
+#!/bin/bash
+# Auto-connect Flydigi Direwolf controllers — no scanning, direct by MAC
+MACS=(
+    "AA:BB:CC:DD:EE:01"  # Replace these with the MACs from above
+    "AA:BB:CC:DD:EE:02"
+    "AA:BB:CC:DD:EE:03"
+    "AA:BB:CC:DD:EE:04"
+)
+for mac in "${MACS[@]}"; do
+    echo -e "connect $mac\ntrust $mac\nquit" | bluetoothctl 2>/dev/null
+    sleep 1
+done
+EOF
+chmod +x /home/pi/bt-autoconnect.sh
+```
+
+From now on, the script connects directly by MAC — **no scanning, no discovery, no interference with other Bluetooth devices around.**
 
 ### 4. Gamepad Server (Pi)
 
