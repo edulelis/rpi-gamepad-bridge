@@ -1,0 +1,13 @@
+[Unit]
+Description=Bluetooth Auto-Connect Flydigi Controllers
+After=bluetooth.target
+Wants=bluetooth.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/pi/bt-autoconnect.sh
+RemainAfterExit=yes
+User=pi
+
+[Install]
+WantedBy=multi-user.target

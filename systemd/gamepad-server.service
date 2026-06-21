@@ -1,0 +1,14 @@
+[Unit]
+Description=Gamepad TCP Server (Pi -> Windows)
+After=bt-autoconnect.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/pi/gamepad-server.py
+Restart=always
+RestartSec=5
+User=pi
+
+[Install]
+WantedBy=multi-user.target
